@@ -2,8 +2,9 @@
 #include <stdlib.h> //para malloc()
 #include <locale.h> //para setlocale
 #include <stdbool.h> //para tipos bool
-#include <math.h> //para log()
+#include <math.h> //para log() e pow()
 #include <string.h> //para strcmp()
+#include <time.h> //para rand() e srand()
 
 #include "others.h" // Coloquei algumas funções aqui para não poluir o código
 
@@ -12,6 +13,14 @@ void menu2(const int cacheSize, const int memSize, int *cacheBits, int *memBits,
 
 int main(){
     setlocale(LC_ALL, "Portuguese");
+
+    // Para gerar números aleatorios
+    unsigned long int max = pow(2,31) -1;
+    if(RAND_MAX < max){ // Impede um estouro de pilha
+        max = RAND_MAX;
+    }
+    srand( (unsigned)time(NULL) );
+     
 
     int hits = 0;
     int misses = 0;
@@ -106,19 +115,52 @@ int main(){
     do{
         flag = true;
 
-        printf("Menu:\n[1] - Avançar (step by step)\n[2] - Avançar para o final\n[3] - Inserir dado na memória\n");
+        printf("Menu:\n[1] - Inserir dados aleatóriamente na memória\n[2] - Inserir dados manualmente na memória\n[3] - Inserir o endereço de memória a ser referenciado\n[4] - Sair\n");
         scanf("%d", &op);
         fflush_stdin(); // limpa buffer
         clear(); // limpa a tela
         
         switch(op){
-        case 1: // Avançar (step by step)
+        case 1: // Inserir dados aleatóriamente na memória
+            
+            printf("Menu:\n[1] - Inserir em um endereço específico\n[2] - Inserir em todos os endereços\n");
+            scanf("%d", &op);
+            fflush_stdin(); // limpa buffer
+            clear(); // limpa a tela
+            
+            if(op == 1){
+                // código repetido
+                printf("Insira o endereço do espaço de memória (-1 para cancelar):\n");
+                scanf("%s", &address);
+                fflush_stdin(); // limpa buffer
+                clear();
+                
+                if(strcmp(address, "-1") == 0){ // Se address == "-1" volta pro menu
+                    break;
+                    
+                }else{ // Descobre a linha do endereço informado
+                    addressLine = -1;
+                    counter = 0;
+                    for(int i=0; i<memSize && counter<memBits; i++){
+                        addressLine++;
+                        counter = 0;
+                        while(memAddress[i][counter] == (int)address[counter] - '0'){
+                            counter++;
+                        }
+                    }
+                }
+                
+                decToBin(memData, addressLine, 32, rand());
+                
+            }else{
+                for(int i=0; i<memSize; i++){
+                    decToBin(memData, i, 32, rand());
+                }
+            }
             
         break;
-        case 2: // Avançar para o final
-            flag = false; // Sai do loop
-        break;
-        case 3: // Inserir dado na memória
+        case 2: // Inserir dados manualmente na memória
+            // código repetido
             printf("Insira o endereço do espaço de memória (-1 para cancelar):\n");
             scanf("%s", &address);
             fflush_stdin(); // limpa buffer
@@ -140,13 +182,18 @@ int main(){
             }
             
             
-            printf("Insira um valor inteiro entre 0 e (2^32)-1:\n");
+            printf("Insira um valor inteiro entre 0 e %d:\n", max);
             scanf("%d", &value);
             fflush_stdin(); // limpa buffer
             clear();
             
             decToBin(memData, addressLine, 32, value);
+        break;
+        case 3: // Inserir o endereço de memória a ser referenciado
             
+        break;
+        case 4: // Sair
+            flag = false; // Sai do loop
         break;
         default:
             printf("Opção Inválida!");
