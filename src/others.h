@@ -14,6 +14,7 @@
 
 #endif // Fim da verificação
 
+#include <stdio.h>
 #include <stdbool.h>
 
 // Limpa a sujeira do buffer  
@@ -34,6 +35,17 @@ void clear(){
 void indent(int *cacheBits){
     for(int i=0; i<*cacheBits; i++){
         printf(" ");
+    }
+}
+
+bool inputVerify(const int min, const int max, const int input){
+    if(input < min || input > max){
+        printf("Opção Inválida!\n");
+        getchar();
+        clear();
+        return true; // Valor inválido
+    }else{
+        return false; // Valor válido
     }
 }
 
