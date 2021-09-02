@@ -8,8 +8,14 @@
 
 #include "others.h" // Coloquei algumas funções aqui para não poluir o código
 
+// Cores do texto
+#define RED "\x1b[31m"
+#define GREEN "\x1b[32m"
+#define RESET "\x1b[0m"
+// 0 - Normal; 1 - validBit Verde; 2 - tag Verde; 3 - validBit Vermelho; 4 - tag Vermelha
+
 void menu1(int *, int *);
-void menu2(const int cacheSize, const int memSize, int *cacheBits, int *memBits, bool **cacheAddress, bool **memAddress, bool **cacheData, bool **memData, const bool *validBit, bool **tag, int hits, int misses, double hit_rate);
+void menu2(const int cacheSize, const int memSize, int *cacheBits, int *memBits, bool **cacheAddress, bool **memAddress, bool **cacheData, bool **memData, const bool *validBit, bool **tag, int hits, int misses, double hit_rate, const int color, const int colorLine);
 
 int main(){
     setlocale(LC_ALL, "Portuguese");
@@ -104,7 +110,7 @@ int main(){
         }
     }
 
-    menu2(cacheSize, memSize, &cacheBits, &memBits, cacheAddress, memAddress, cacheData,  memData, validBit, tag, hits, misses, hit_rate);
+    menu2(cacheSize, memSize, &cacheBits, &memBits, cacheAddress, memAddress, cacheData,  memData, validBit, tag, hits, misses, hit_rate, 0, 0);
 
     bool flag; // Usado pra sair do loop
     int op; // Utilizado para escolher a ação no menu
@@ -112,6 +118,8 @@ int main(){
     int addressLine; // Linha do endereço escolhido
     int counter = 0;
     int value;
+    int cacheAddressLine = 0;
+    int tagVerify;
     do{
         flag = true;
 
@@ -191,6 +199,94 @@ int main(){
         break;
         case 3: // Inserir o endereço de memória a ser referenciado
             
+            // código repetido
+            printf("Insira o endereço do espaço de memória (-1 para cancelar):\n");
+            scanf("%s", &address);
+            fflush_stdin(); // limpa buffer
+            clear();
+            
+            if(strcmp(address, "-1") == 0){ // Se address == "-1" volta pro menu
+                break;
+                
+            }else{ // Descobre a linha do endereço informado
+                addressLine = -1;
+                counter = 0;
+                for(int i=0; i<memSize && counter<memBits; i++){
+                    addressLine++;
+                    counter = 0;
+                    while(memAddress[i][counter] == (int)address[counter] - '0'){
+                        counter++;
+                    }
+                }
+            }
+            
+            for(int i=0, j, k, l=-1; i<cacheSize; i++){ // Percorre linhas da cache
+                j = 0;
+                k = memBits - cacheBits;
+                
+                while(cacheAddress[i][j] == memAddress[addressLine][k] && k < memBits){
+                    j++;
+                    k++;
+                }
+                
+                l++;
+                if(k==memBits){
+                    cacheAddressLine = l;
+                    break;
+                }
+            }
+            
+            if(validBit[cacheAddressLine] == 1){
+                // Muda cor do validBit pra verde
+                menu2(cacheSize, memSize, &cacheBits, &memBits, cacheAddress, memAddress, cacheData,  memData, validBit, tag, hits, misses, hit_rate, 1, cacheAddressLine);
+                getchar();
+                clear();
+                
+                tagVerify = 0;
+                for(int i=0; i<memBits-cacheBits; i++){
+                    if(tag[cacheAddressLine][i] == memAddress[addressLine][i]){
+                        tagVerify++;
+                    }
+                }
+                if(tagVerify == memBits-cacheBits){ // Se tag == bits mais á esquerda do endereço de memória
+                    // Muda cor da tag pra verde
+                    hits++;
+                    menu2(cacheSize, memSize, &cacheBits, &memBits, cacheAddress, memAddress, cacheData,  memData, validBit, tag, hits, misses, hit_rate, 2, cacheAddressLine);
+                    getchar();
+                    clear();
+                }else{
+                    // Muda cor da tag pra vermelho
+                    misses++;
+                    menu2(cacheSize, memSize, &cacheBits, &memBits, cacheAddress, memAddress, cacheData,  memData, validBit, tag, hits, misses, hit_rate, 4, cacheAddressLine);
+                    getchar();
+                    clear();
+                    
+                    //Código repetido
+                    validBit[cacheAddressLine] = 1;
+                    for(int i=0; i<32; i++){
+                        if(i<memBits-cacheBits){
+                            tag[cacheAddressLine][i] = memAddress[addressLine][i]; // Adiciona nova tag á cache
+                        }
+                        cacheData[cacheAddressLine][i] = memData[addressLine][i]; // Copia dados da memória para a cache
+                    }
+                }
+            }else{
+                // Muda cor do bit de válidade pra vermelho
+                misses++;
+                menu2(cacheSize, memSize, &cacheBits, &memBits, cacheAddress, memAddress, cacheData,  memData, validBit, tag, hits, misses, hit_rate, 3, cacheAddressLine);
+                getchar();
+                clear();
+                
+                //Código repetido
+                validBit[cacheAddressLine] = 1;
+                for(int i=0; i<32; i++){
+                    if(i<memBits-cacheBits){
+                        tag[cacheAddressLine][i] = memAddress[addressLine][i]; // Adiciona nova tag á cache
+                    }
+                    cacheData[cacheAddressLine][i] = memData[addressLine][i]; // Copia dados da memória para a cache
+                }
+            }
+            
         break;
         case 4: // Sair
             flag = false; // Sai do loop
@@ -201,7 +297,7 @@ int main(){
             clear(); // limpa a tela
         }
         
-        menu2(cacheSize, memSize, &cacheBits, &memBits, cacheAddress, memAddress, cacheData,  memData, validBit, tag, hits, misses, hit_rate);
+        menu2(cacheSize, memSize, &cacheBits, &memBits, cacheAddress, memAddress, cacheData,  memData, validBit, tag, hits, misses, hit_rate, 0, 0);
         
     }while(flag);
     
@@ -257,7 +353,10 @@ void menu1(int *cacheSize, int *memSize){
     }while(flag);
 }
 
-void menu2(const int cacheSize, const int memSize, int *cacheBits, int *memBits, bool **cacheAddress, bool **memAddress, bool **cacheData, bool **memData, const bool *validBit, bool **tag, int hits, int misses, double hit_rate){
+void menu2(const int cacheSize, const int memSize, int *cacheBits, int *memBits, bool **cacheAddress, bool **memAddress, bool **cacheData, bool **memData, const bool *validBit, bool **tag, int hits, int misses, double hit_rate, const int color, const int colorLine){
+    if(hits+misses != 0){ // Evita divisão por zero
+        hit_rate = (double) hits/(hits+misses)*100;
+    }
     //Cache:
     //------------------------------------------------------
     indent(cacheBits); // Recuo
@@ -273,9 +372,29 @@ void menu2(const int cacheSize, const int memSize, int *cacheBits, int *memBits,
         for(int j=0; j<*cacheBits; j++){ // Endereços da Cache
             printf("%d", cacheAddress[i][j]);
         }
-        printf(" | %d | ", validBit[i]); // Bit de válidade
+        if(i == colorLine){
+            if(color == 1){ // Verde
+                printf(" | " GREEN "%d" RESET " | ", validBit[i]); // Bit de válidade
+            }else if(color == 3){ // Vermelho
+                printf(" | " RED "%d" RESET " | ", validBit[i]); // Bit de válidade
+            }else{
+                printf(" | %d | ", validBit[i]); // Bit de válidade
+            }
+        }else{
+            printf(" | %d | ", validBit[i]); // Bit de válidade
+        }
         for(int j=0; j<(*memBits)-(*cacheBits); j++){ // Tags
-            printf("%d", tag[i][j]);
+            if(i == colorLine){
+                if(color == 2){ // Verde
+                    printf(GREEN "%d" RESET, tag[i][j]);
+                }else if(color == 4){ // Vermelho
+                    printf(RED "%d" RESET, tag[i][j]);
+                }else{
+                    printf("%d", tag[i][j]);
+                }
+            }else{
+                printf("%d", tag[i][j]);
+            }
         }
         printf(" | ");
         for(int j=0; j<32; j++){ // Dados na Cache
