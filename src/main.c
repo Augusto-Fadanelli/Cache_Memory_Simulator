@@ -110,8 +110,6 @@ int main(){
         }
     }
 
-    menu2(cacheSize, memSize, &cacheBits, &memBits, cacheAddress, memAddress, cacheData,  memData, validBit, tag, hits, misses, hit_rate, 0, 0);
-
     bool flag; // Usado pra sair do loop
     int op; // Utilizado para escolher a ação no menu
     char address[memBits+1]; // Armazena o endereço escolhido
@@ -123,18 +121,24 @@ int main(){
     do{
         flag = true;
 
-        printf("Menu:\n[1] - Inserir dados aleatóriamente na memória\n[2] - Inserir dados manualmente na memória\n[3] - Inserir o endereço de memória a ser referenciado\n[4] - Sair\n");
-        scanf("%d", &op);
-        fflush_stdin(); // limpa buffer
-        clear(); // limpa a tela
+        do{
+            menu2(cacheSize, memSize, &cacheBits, &memBits, cacheAddress, memAddress, cacheData,  memData, validBit, tag, hits, misses, hit_rate, 0, 0);
+            
+            printf("Menu:\n[1] - Inserir dados aleatóriamente na memória\n[2] - Inserir dados manualmente na memória\n[3] - Inserir o endereço de memória a ser referenciado\n[4] - Sair\n");
+            scanf("%d", &op);
+            fflush_stdin(); // limpa buffer
+            clear(); // limpa a tela
+        }while(inputVerify(1, 4, op));
         
         switch(op){
         case 1: // Inserir dados aleatóriamente na memória
             
-            printf("Menu:\n[1] - Inserir em um endereço específico\n[2] - Inserir em todos os endereços\n");
-            scanf("%d", &op);
-            fflush_stdin(); // limpa buffer
-            clear(); // limpa a tela
+            do{
+                printf("Menu:\n[1] - Inserir em um endereço específico\n[2] - Inserir em todos os endereços\n");
+                scanf("%d", &op);
+                fflush_stdin(); // limpa buffer
+                clear(); // limpa a tela
+            }while(inputVerify(1, 2, op));
             
             if(op == 1){
                 // código repetido
@@ -142,10 +146,9 @@ int main(){
                 scanf("%s", &address);
                 fflush_stdin(); // limpa buffer
                 clear();
-                
+                        
                 if(strcmp(address, "-1") == 0){ // Se address == "-1" volta pro menu
                     break;
-                    
                 }else{ // Descobre a linha do endereço informado
                     addressLine = -1;
                     counter = 0;
@@ -156,7 +159,7 @@ int main(){
                             counter++;
                         }
                     }
-                }
+                }    
                 
                 decToBin(memData, addressLine, 32, rand());
                 
@@ -189,11 +192,12 @@ int main(){
                 }
             }
             
-            
-            printf("Insira um valor inteiro entre 0 e %d:\n", max);
-            scanf("%d", &value);
-            fflush_stdin(); // limpa buffer
-            clear();
+            do{
+                printf("Insira um valor inteiro entre 0 e %d:\n", max);
+                scanf("%d", &value);
+                fflush_stdin(); // limpa buffer
+                clear();
+            }while(inputVerify(0, max, value));
             
             decToBin(memData, addressLine, 32, value);
         break;
@@ -297,7 +301,7 @@ int main(){
             clear(); // limpa a tela
         }
         
-        menu2(cacheSize, memSize, &cacheBits, &memBits, cacheAddress, memAddress, cacheData,  memData, validBit, tag, hits, misses, hit_rate, 0, 0);
+        //menu2(cacheSize, memSize, &cacheBits, &memBits, cacheAddress, memAddress, cacheData,  memData, validBit, tag, hits, misses, hit_rate, 0, 0);
         
     }while(flag);
     
